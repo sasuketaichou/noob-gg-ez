@@ -1,4 +1,4 @@
-package com.example.amieruljapri.myapplication31;
+package com.example.mierul.myapplication18;
 
 import android.app.ProgressDialog;
 import android.support.annotation.NonNull;
@@ -12,27 +12,22 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-public class MainActivity extends AppCompatActivity {
-    private Button buttonSave;
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private EditText editTextName;
     private EditText editTextAddress;
     private TextView textViewPersons;
     private FirebaseAuth firebaseAuth;
     private ProgressDialog progressDialog;
-    private Button buttonRegister;
-    private Button buttonLogin;
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private FirebaseUser mFirebaseUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,13 +37,12 @@ public class MainActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         Firebase.setAndroidContext(this);
 
-        buttonSave = (Button) findViewById(R.id.buttonSave);
         editTextName = (EditText) findViewById(R.id.editTextName);
         editTextAddress = (EditText) findViewById(R.id.editTextAddress);
         textViewPersons = (TextView) findViewById(R.id.textViewPersons);
-        buttonRegister = (Button)findViewById(R.id.buttonRegister);
+
         progressDialog = new ProgressDialog(this);
-        buttonLogin = (Button)findViewById(R.id.buttonLogin);
+
 
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
@@ -62,70 +56,32 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-
-
-
-        buttonRegister.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                register();
-            }
-        });
-        buttonLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                    login();
-            }
-        });
-        buttonSave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                saveData();
-            }
-        });
-
-
+        Button buttonSave = (Button) findViewById(R.id.buttonSave);
+        buttonSave.setOnClickListener(this);
+        Button buttonRegister = (Button) findViewById(R.id.buttonRegister);
+        buttonRegister.setOnClickListener(this);
+        Button buttonLogin = (Button) findViewById(R.id.buttonLogin);
+        buttonLogin.setOnClickListener(this);
     }
 
-    private void saveData() {
-        //Creating firebase object
-        Firebase ref = new Firebase(Config.FIREBASE_URL);
 
-        //Getting values to store
-        String name = editTextName.getText().toString().trim();
-        String address = editTextAddress.getText().toString().trim();
+    @Override
+    public void onClick(View view) {
+        switch(view.getId()){
+            case R.id.buttonLogin:
+                login();
+                break;
+            case R.id.buttonRegister:
+                register();
+                break;
+            case R.id.buttonSave:
+                saveData();
+                break;
 
-        //Creating Person object
-        Person person = new Person();
+            default:
+                break;
+        }
 
-        //Adding values
-        person.setName(name);
-        person.setAddress(address);
-
-        //Storing values to firebase
-        ref.child("Person").setValue(person);
-
-        //Value event listener for realtime data update
-        ref.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for(DataSnapshot postSnapshot : dataSnapshot.getChildren()){
-                    //Getting the data from snapshot
-                    Person person = postSnapshot.getValue(Person.class);
-
-                    //Adding it to a string
-                    String string = "Name: "+person.getName()+"\nAddress: "+person.getAddress();
-
-                    //Displaying it on textview
-                    textViewPersons.setText(string);
-                }
-            }
-
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-                Toast.makeText(getApplicationContext(),"The read failed: "+firebaseError,Toast.LENGTH_LONG).show();
-            }
-        });
     }
 
     @Override
@@ -142,6 +98,55 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void saveData() {
+
+        mFirebaseUser = firebaseAuth.getCurrentUser();
+
+        if(mFirebaseUser != null) {
+
+            //Creating firebase object
+            Firebase ref = new Firebase(Config.FIREBASE_URL);
+
+            //Getting values to store
+            String name = editTextName.getText().toString().trim();
+            String address = editTextAddress.getText().toString().trim();
+
+            //Creating Person object
+            Person person = new Person();
+
+            //Adding values
+            person.setName(name);
+            person.setAddress(address);
+
+            //Storing values to firebase
+            ref.child("Person").setValue(person);
+
+            //Value event listener for realtime data update
+            ref.addValueEventListener(new com.firebase.client.ValueEventListener() {
+                @Override
+                public void onDataChange(com.firebase.client.DataSnapshot dataSnapshot) {
+                    for (com.firebase.client.DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
+                        //Getting the data from snapshot
+                        Person person = postSnapshot.getValue(Person.class);
+
+                        //Adding it to a string
+                        String string = "Name: " + person.getName() + "\nAddress: " + person.getAddress();
+
+                        //Displaying it on textview
+                        textViewPersons.setText(string);
+                    }
+                }
+
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+                    Toast.makeText(getApplicationContext(), "The read failed: " + firebaseError, Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+        else Toast.makeText(MainActivity.this,"Not Authenticate yet,please login",Toast.LENGTH_LONG).show();
+
+    }
+
     private void login() {
 
         String name = editTextName.getText().toString().trim();
@@ -155,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
                             if (task.isSuccessful()) {
                                 Toast.makeText(MainActivity.this, "Login success", Toast.LENGTH_LONG).show();
                             } else {
-                                Toast.makeText(MainActivity.this, "Login failed :" + task.getException(), Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this, "Login failed :" + task, Toast.LENGTH_LONG).show();
                             }
                         }
                     });
@@ -179,6 +184,9 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             //creating a new user
+            //password must be more / equal than 8 characters?
+            // testing@hayoo.com
+            // hayookkk
             firebaseAuth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                         @Override
@@ -198,4 +206,5 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
 }
