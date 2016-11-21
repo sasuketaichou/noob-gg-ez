@@ -106,9 +106,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Person person = new Person();
         person.setName(name);
         person.setAddress(pass);
-
-        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
-        mDatabase.child("Person").setValue(person);
+        
+        //full path of db reference including Person
+        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference().child("Person");
+        mDatabase.setValue(person);
 
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
