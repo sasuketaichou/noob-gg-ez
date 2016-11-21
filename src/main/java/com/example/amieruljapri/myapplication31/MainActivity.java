@@ -100,50 +100,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void saveData() {
 
-        mFirebaseUser = firebaseAuth.getCurrentUser();
+        String name = editTextName.getText().toString().trim();
+        String pass = editTextAddress.getText().toString().trim();
 
-        if(mFirebaseUser != null) {
+        Person person = new Person();
+        person.setName(name);
+        person.setAddress(pass);
 
-            //Creating firebase object
-            Firebase ref = new Firebase(Config.FIREBASE_URL);
+        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
+        mDatabase.child("Person").setValue(person);
 
-            //Getting values to store
-            String name = editTextName.getText().toString().trim();
-            String address = editTextAddress.getText().toString().trim();
+        mDatabase.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Person person = dataSnapshot.getValue(Person.class);
 
-            //Creating Person object
-            Person person = new Person();
+                //Adding it to a string
+                String string = "Name: " + person.getName() + "\nAddress: " + person.getAddress();
 
-            //Adding values
-            person.setName(name);
-            person.setAddress(address);
+                //Displaying it on textview
+                textViewPersons.setText(string);
+            }
 
-            //Storing values to firebase
-            ref.child("Person").setValue(person);
-
-            //Value event listener for realtime data update
-            ref.addValueEventListener(new com.firebase.client.ValueEventListener() {
-                @Override
-                public void onDataChange(com.firebase.client.DataSnapshot dataSnapshot) {
-                    for (com.firebase.client.DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
-                        //Getting the data from snapshot
-                        Person person = postSnapshot.getValue(Person.class);
-
-                        //Adding it to a string
-                        String string = "Name: " + person.getName() + "\nAddress: " + person.getAddress();
-
-                        //Displaying it on textview
-                        textViewPersons.setText(string);
-                    }
-                }
-
-                @Override
-                public void onCancelled(FirebaseError firebaseError) {
-                    Toast.makeText(getApplicationContext(), "The read failed: " + firebaseError, Toast.LENGTH_LONG).show();
-                }
-            });
-        }
-        else Toast.makeText(MainActivity.this,"Not Authenticate yet,please login",Toast.LENGTH_LONG).show();
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(getApplicationContext(), "The read failed: " + databaseError, Toast.LENGTH_LONG).show();
+            }
+        });
 
     }
 
